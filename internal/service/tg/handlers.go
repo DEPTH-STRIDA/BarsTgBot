@@ -157,7 +157,14 @@ func (h *TGHandler) NameEnterNameState() tgbotapisfm.State {
 				}
 				normalized := normalizeName(name)
 				h.SaveNameToCache(update.Message.From.ID, normalized)
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Ваше имя: %s\nЕсли все так, нажмите Продолжить.\nЕсли хотите изменить имя, просто отправьте новое.", normalized))
+
+				text := fmt.Sprintf("*Ваше имя:* _%s_\n\n"+
+					"Если все верно, нажмите *Продолжить*\\."+
+					"\nЕсли хотите изменить имя, просто отправьте новое\\.",
+					escapeMarkdown(normalized))
+
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+				msg.ParseMode = "MarkdownV2"
 				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 					[]tgbotapi.KeyboardButton{
 						tgbotapi.NewKeyboardButton("Продолжить"),
@@ -188,7 +195,10 @@ func (h *TGHandler) NameEnterPhoneState() tgbotapisfm.State {
 		Global: false,
 		AtEntranceFunc: &tgbotapisfm.Handler{
 			Handle: func(bot *tgbotapisfm.Bot, update tgbotapi.Update) error {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Введите номер телефона (только РФ)")
+				text := "*Введите номер телефона*\n" +
+					"_Только для номеров РФ_"
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+				msg.ParseMode = "MarkdownV2"
 				_, err := bot.SendMessage(msg)
 				return err
 			},
@@ -215,7 +225,14 @@ func (h *TGHandler) NameEnterPhoneState() tgbotapisfm.State {
 				cacheData.UserId = update.Message.From.ID
 				cacheData.Phone = phone
 				h.cache.Set(fmt.Sprint(update.Message.From.ID), cacheData, gocache.DefaultExpiration)
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Ваш номер: %s\nЕсли все так, нажмите Завершить регистрацию.\nЕсли хотите изменить номер, просто отправьте новый.", formatted))
+
+				text := fmt.Sprintf("*Ваш номер:* _%s_\n\n"+
+					"Если все верно, нажмите *Завершить регистрацию*\\."+
+					"\nЕсли хотите изменить номер, просто отправьте новый\\.",
+					escapeMarkdown(formatted))
+
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+				msg.ParseMode = "MarkdownV2"
 				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 					[]tgbotapi.KeyboardButton{
 						tgbotapi.NewKeyboardButton("Завершить регистрацию"),
@@ -263,7 +280,12 @@ func (h *TGHandler) RegistrationFinishHandler() tgbotapisfm.Handler {
 				return nil
 			}
 			if exists {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Вы уже зарегистрированы в баре %s с этим номером телефона.", cacheData.Bar))
+				text := fmt.Sprintf("❗ Вы уже зарегистрированы в баре *%s* "+
+					"с номером _%s_\\.",
+					escapeMarkdown(cacheData.Bar),
+					escapeMarkdown(formatPhone(cacheData.Phone)))
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+				msg.ParseMode = "MarkdownV2"
 				msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 				_, _ = bot.SendMessage(msg)
 				return nil
@@ -291,7 +313,17 @@ func (h *TGHandler) RegistrationFinishHandler() tgbotapisfm.Handler {
 			default:
 			}
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Регистрация завершена! Спасибо!")
+			text := "✅ *Регистрация успешно завершена\\!*\n\n" +
+				fmt.Sprintf("📍 *Бар:* %s\n"+
+					"👤 *Имя:* _%s_\n"+
+					"📱 *Телефон:* _%s_\n\n"+
+					"Спасибо за регистрацию\\!",
+					escapeMarkdown(cacheData.Bar),
+					escapeMarkdown(cacheData.Name),
+					escapeMarkdown(formatPhone(cacheData.Phone)))
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+			msg.ParseMode = "MarkdownV2"
 			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 			_, _ = bot.SendMessage(msg)
 			return nil
@@ -342,4 +374,14 @@ func (h *TGHandler) StatesMap() map[string]tgbotapisfm.State {
 		"name_enter":  h.NameEnterNameState(),
 		"phone_enter": h.NameEnterPhoneState(),
 	}
+}
+
+// Добавляем функцию для экранирования специальных символов Markdown
+func escapeMarkdown(text string) string {
+	specialChars := []string{"_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!"}
+	escaped := text
+	for _, char := range specialChars {
+		escaped = strings.ReplaceAll(escaped, char, "\\"+char)
+	}
+	return escaped
 }
