@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: deployments/barBot/Dockerfile
+    container_name: barBot_app
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      TZ: Europe/Moscow
+      BOT_TOKEN: ${BOT_TOKEN}
+      ADMINS: ${ADMINS}
+
+      DBHOST: ${DBHOST}
+      DBPORT: ${DBPORT}
+      DBUSER: ${DBUSER}
+      DBPASS: ${DBPASS}
+      DBNAME: ${DBNAME}
+      DBSSLMODE: ${DBSSLMODE}
+      
+      SHEET_PAUSE_MS: ${SHEET_PAUSE_MS}
+      SHEET_ID: ${SHEET_ID}
+      CLIENT_LIST_ID: ${CLIENT_LIST_ID}
+      CREDENTIALS_BASE64: ${CREDENTIALS_BASE64}
+    networks:
+      - barBot_network
+
+
+networks:
+  barBot_network:
+    external: true
