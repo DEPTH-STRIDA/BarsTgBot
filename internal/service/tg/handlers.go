@@ -45,7 +45,31 @@ func (h *TGHandler) StartState() tgbotapisfm.State {
 	var StartState = tgbotapisfm.State{
 		Global: true,
 		MessageHandlers: map[string]tgbotapisfm.Handler{
-			"/start":        h.StartHandler(),
+			"/start": {
+				Handle: func(b *tgbotapisfm.Bot, u tgbotapi.Update) error {
+					text := "*Добро пожаловать в бонусную программу наших заведений\\!*\n\n" +
+						"Зарегистрируйтесь прямо сейчас и начните получать бонусы за покупки:\n\n" +
+						"*Ваши бонусы:*\n" +
+						"• *3%* — сразу после регистрации\n" +
+						"• *6%* — при покупках от 20 000 ₽\n" +
+						"• *9%* — при покупках от 50 000 ₽\n" +
+						"• *12%* — при покупках от 100 000 ₽\n\n" +
+						"Вы можете оплатить до *30%* от стоимости заказа бонусами\\!\n\n" +
+						"_Для начала регистрации нажмите кнопку *Регистрация*_"
+
+					msg := tgbotapi.NewMessage(u.Message.Chat.ID, text)
+					msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
+						[]tgbotapi.KeyboardButton{
+							tgbotapi.NewKeyboardButton("Регистрация"),
+						},
+					)
+					msg.ParseMode = "MarkdownV2"
+					_, err := b.SendMessage(msg)
+					return err
+				},
+			},
+			"регистрация":   h.StartHandler(),
+			"/reg":          h.StartHandler(),
 			"black cat pub": h.BarSelectHandler("Black cat pub"),
 			"bar heroes":    h.BarSelectHandler("Bar Heroes"),
 		},
