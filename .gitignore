@@ -1,3 +1,4 @@
 .env
 .env.prod
-.json
+*.json
+credentials/*.json
