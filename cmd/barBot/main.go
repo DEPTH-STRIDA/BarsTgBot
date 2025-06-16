@@ -47,6 +47,7 @@ func main() {
 		cfg.GoogleSheetConfig.ClientListID,
 		cfg.GoogleSheetConfig.PauseMs,
 		sheet.NewDefaultColumnMap(),
+		logger,
 	)
 	if err != nil {
 		logger.Fatal("error creating sheet service", zap.Error(err))
